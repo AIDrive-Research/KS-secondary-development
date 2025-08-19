@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>实时画面叠加实时检测结果</title>
+  <meta charset="utf-8">
+
+  <link rel="stylesheet" href="https://unpkg.com/layui@2.8.18/dist/css/layui.css">
+  <link href="live.css" rel="stylesheet">
+  <script>
+    let ZQLGLOBAL = {
+      serverIp: '192.168.1.169' ,// 修改成您的盒子aiboxd的IP地址
+      getDevices: `:9091/ks/device`,
+      getSources: `:9091/ks/source`,
+      subscribe: `:9089/ks/stream/live/subscribe`,
+      detect: `:9089/ks/stream/attr`,
+      tunnel:`:9091/ks/system/tunnel`,
+      sysArgs: `:9091/ks/system/args`,
+      resultTopic: 'ks/sink_local_result', //实时检测结果
+      streamCodeTopic: 'ks/stream',// 视频流状态码，状态码改变后应重新播放
+      srs_server: 1935,
+      srs_http_api: 1985,
+      srs_http_server: 8080,
+      websocket: 8083,
+    }
+
+    let ZQL_videosInfos = { 0: null, 1: null, 2: null, 3: null };
+    let ZQL_playingSource = {
+      0: null, 1: null, 2: null, 3: null,
+      videoNum: 4,
+      curposition: -1
+    }
+    let ZQL_sources = {};
+  </script>
+  <script type="text/javascript" src="public/crypto-js.js"></script>
+  <script type="text/javascript" src="public/jquery-1.10.2.min.js"></script>
+  <script type="text/javascript" src="public/jswebrtc.min.js"></script>
+  <script type="text/javascript" src="public/mpegts.js"></script>
+  <script type="text/javascript" src="public/mqtt.min.js"></script>
+  <script src="https://unpkg.com/layui@2.8.18/dist/layui.js"></script>
+</head>
+
+<body>
+  <div class="main-container">
+    <div id="video-container" class="one-video">
+      <div class="video-box">
+        <div class="title-container" id="video-title1"></div>
+        <video ref="video" muted id="video1" class="video-js" autoplay="autoplay" preload="auto"></video>
+        <canvas class="canvas-shuju" id="canvas1"></canvas>
+      </div>
+    </div>
+    <div class="right-container">
+      <!-- <div class="btn-container">
+        <i class="z-icon-onevideo" id="icon-oneviveo"></i>
+        <i class="z-icon-fourvideo" id="icon-fourviveo"></i>
+      </div> -->
+      <div id="ZQL_source_tree"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="live.js"></script>
+  <script>
+    init();
+  </script>
+</body>
+
+</html>
