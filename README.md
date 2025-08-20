@@ -28,5 +28,7 @@ device.html是设备信息demo，将文件中的IP地址替换成KS设备的IP�
 ![](./assets/device.png)
 
 ## 心跳保活
-
 分别提供了python和java两种语言的服务端对接KS设备心跳的demo代码。
+
+## 接收大模型复审告警
+启动main文件，在接收端创建一个server，在设备端【大模型】-【复审任务】-【结果推送】处，填上http://IP:port/vlreview  ，即可接收设备的大模型的复审告警。
