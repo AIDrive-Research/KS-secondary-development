@@ -16,3 +16,13 @@ def post_alert():
     with open('image.jpg', 'wb') as f:
         f.write(base64.b64decode(image.encode('utf-8')))
     return data
+
+
+@bp.route('alert/video', methods=['POST'])
+def post_alert_video():
+    data = json.loads(request.get_data().decode('utf-8'))
+    video = data.pop('video')
+    print(data)
+    with open('video.mp4', 'wb') as f:
+        f.write(base64.b64decode(video.encode('utf-8')))
+    return data
