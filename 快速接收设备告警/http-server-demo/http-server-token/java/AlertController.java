@@ -27,26 +27,14 @@ public class AlertController {
     /**
      * 目标平台接收告警及告警视频
      *
-     * @param data
-     * @param video
-     * @param authorization
+     * @param alertVideo
      */
 
-
-
-    @PostMapping("/alert/video")
-    public void getAlertVideo(
-            @RequestHeader("Authorization") String authorization
-            @RequestPart("data") String data,  // 接收 JSON 字符串
-            @RequestPart("video") MultipartFile video) {
-
-        AlertVideo alertVideo = JSON.parseObject(data, AlertVideo.class);
+    @PostMapping(path = "/video")
+    public void getAlertVideo(@RequestBody AlertVideo alertVideo,@RequestHeader("Authorization") String authorization) {
         log.info("authorization：{}", authorization);
         log.info("示例接收告警及告警视频：{}", alertVideo);
-        log.info("接收到的视频文件名大小：{}", video.getSize());
-
     }
-
 
 
 
