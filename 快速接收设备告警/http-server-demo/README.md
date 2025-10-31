@@ -2,7 +2,7 @@
 
 > **http-server-demo** 分为三个文件夹。
 >
-> 1. **headers** ：http请求头的原始demo代码
+> 1. **headers** ：http请求头的demo代码
 > 2. **http-server** ：http服务端，接收告警推送(无token版本)
 > 3. **http-server-token** ：http服务端，接收告警推送(有token版本)
 
