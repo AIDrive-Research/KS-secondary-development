@@ -8,27 +8,18 @@ class Api:
     """
     API类，实现最简单的tcp通讯，如果需要自动重连，队列等业务代码请自行实现
     """
+
     def __init__(self):
         """
         Attributes:
-            self.ignore_result: 为True时，不发送检测结果，为False则发送检测结果
             self.ignore_alert: 为True时，不发送告警信息，为False则发送告警信息
             self.draw_image: 为True时，告警图片会画上告警信息，为False则不画
             self.ignore_alert_video: 为True时，不发送告警视频，为False则发送
         """
-        self.ignore_result = True
+
         self.ignore_alert = False
         self.draw_image = True
         self.ignore_alert_video = True
-
-    def send_result_callback(self, result):
-        """
-        发送检测结果回调函数
-        Args:
-            result: 检测结果数据
-        Returns:
-        """
-        pass
 
     def send_alert_callback(self, alert):
         """
