@@ -57,17 +57,17 @@ class LayuiTableManager {
           this.deleteData(data.id);
         }
       });
-      form.on('switch(switchTest)', (obj) =>{
+      form.on('switch(switchTest)', (obj) => {
         console.log(obj)
         let status;
-        if(obj.elem.checked == true){
+        if (obj.elem.checked == true) {
           status = 1
-        }else{
+        } else {
           status = -1
         }
         sourceApis.editSource({
-          id:obj.value,
-          status:status
+          id: obj.value,
+          status: status
         }).then(res => {
           this.showNotification('数据更新成功！');
         })
@@ -78,7 +78,13 @@ class LayuiTableManager {
   getTableData() {
     sourceApis.getSources().then(res => {
       this.data = res.data.filter(item => item.type == 'stream').map(item => {
-        item.alg_ch_names = Object.keys(item.alg).map(alg_name => this.alg[alg_name].ch_name).join(',')
+        if (item.alg) {
+          item.alg_ch_names = Object.keys(item.alg).map(alg_name => this.alg[alg_name].config.display_name).join(',')
+        } else {
+          item.alg = {}
+        }
+        item.streamInfo = JSON.parse(JSON.stringify(item.stream));
+        item.stream = item.detail.stream_url;
         return item
       });
       if (this.table) {
@@ -117,9 +123,9 @@ class LayuiTableManager {
       let algEl = ``;
       for (let key in this.alg) {
         if (data.alg[key]) {
-          algEl += `<input type="checkbox" name="${this.alg[key].name}" title="${this.alg[key].ch_name}" checked> `;
+          algEl += `<input type="checkbox" name="${this.alg[key].name}" title="${this.alg[key].config.display_name}" checked> `;
         } else {
-          algEl += `<input type="checkbox" name="${this.alg[key].name}" title="${this.alg[key].ch_name}">`;
+          algEl += `<input type="checkbox" name="${this.alg[key].name}" title="${this.alg[key].config.display_name}">`;
         }
 
       }
@@ -145,10 +151,10 @@ class LayuiTableManager {
                         </div>
                         <div class="layui-form-item" >
                             <label class="layui-form-label"></label>
-                            <button class="layui-btn layui-btn-normal" lay-submit lay-filter="detect">
-                              检测是否在线
+                            <button class="layui-btn" lay-submit lay-filter="detect">
+                              接入并保存流信息
                             </button>
-                            <input type="hidden" name="draw_size" value="${data.draw_size}">
+                            <input type="hidden" value="${data.stream}">
                         </div>
                         <div class="layui-form-item">
                             <label class="layui-form-label">算法</label>
@@ -163,7 +169,7 @@ class LayuiTableManager {
                             <button class="layui-btn layui-btn-normal" lay-submit lay-filter="getAlgParams">
                               获取算法参数
                             </button>
-                        </div>
+                        </div >
                         <div class="layui-form-item">
                             <div class="layui-input-block">
                                 <button class="layui-btn" lay-submit lay-filter="saveData">保存</button>
@@ -176,23 +182,30 @@ class LayuiTableManager {
           // 检测
           form.on('submit(detect)', (formData) => {
             sourceApis.getAttr(formData.field.stream).then(res => {
-              data.draw_size = res.data.size;
-              data.encoding = res.data.codec;
+              if(res.error_code == 0){
+                data.id = res.data.stream;
+                data.streamInfo = res.data;
+                this.handleAdd(formData.field, data, res.data);
+              } else {
+                this.showNotification(res.message, 'error');
+              }
             })
             return false;
           });
           form.on('submit(getAlgParams)', (formData) => {
-            if (!data.draw_size) {
+            if (!data.streamInfo) {
               // 先检测
-              this.showNotification('请先检测是否在线', 'error');
+              this.showNotification('请先点击接入并保存流信息', 'error');
               return false;
             }
             // 算法参数含义可参考如下链接中的“3.前端配置文件”部分：https://github.com/AIDrive-Research/Custom-Algorithm/tree/main/02_CustomAlgorithm/03_PackageStructure
             let algEls = document.querySelectorAll("#sel-algs-container input");
+            let draw_size = data.streamInfo.image_size.draw;
             for (let i = 0; i < algEls.length; i++) {
               if (algEls[i].checked == true && !data.alg[algEls[i].name]) {
                 ((alg) => {
                   sourceApis.getAlgJson(alg).then(res => {
+                    this.showNotification(`${alg}参数获取成功`);
                     // 算法配置文件中的basicParams为需要保存到后台的参数
                     data.alg[alg] = JSON.parse(JSON.stringify(res.basicParams));
                     // 算法配置文件中的renderParams为算法参数的展示、配置规则
@@ -203,7 +216,7 @@ class LayuiTableManager {
                         data.alg[alg].bbox.polygons = [{
                           id: `polygon_${new Date().getTime()}`,
                           name: '',
-                          polygon: [[0, 0], [data.draw_size[0], 0], [data.draw_size[0], data.draw_size[1]], [0, data.draw_size[1]]] // 以整图坐标为例
+                          polygon: [[0, 0], [draw_size[0], 0], [draw_size[0], draw_size[1]], [0, draw_size[1]]] // 以整图坐标为例
                         }]
                       }
                       // 判断是否必须有直线，如人员计数、车辆计数等必须绘制虚拟直线
@@ -212,7 +225,7 @@ class LayuiTableManager {
                         data.alg[alg].bbox.lines = [{
                           id: `line_${new Date().getTime()}`,
                           name: '',
-                          line: [[0, data.draw_size[1] / 2], [data.draw_size[0], data.draw_size[1] / 2]],
+                          line: [[0, draw_size[1] / 2], [draw_size[0], draw_size[1] / 2]],
                           direction: 'd+', // d+表示从上到下，
                           action: { count: "统计" }
                         }]
@@ -224,7 +237,7 @@ class LayuiTableManager {
                       let lib_type = data.alg[alg].alg_type.replace('match_', '');
                       // 获取对应算法的底库组
                       sourceApis.getGrpup(lib_type).then(res => {
-                        if(res.data.length > 0){
+                        if (res.data.length > 0) {
                           let groupId = res.data[0].id;
                           data.alg[alg].reserved_args.group_id = groupId;
                         } else {
@@ -244,58 +257,56 @@ class LayuiTableManager {
             let algEls = document.querySelectorAll("#sel-algs-container input");
             for (let i = 0; i < algEls.length; i++) {
               // checked == false，未勾选的算法
-              if (algEls[i].checked == false && data.alg[algEls[i].name]){
+              if (algEls[i].checked == false && data.alg[algEls[i].name]) {
                 delete alg[algEls[i].name]; // 删除多余算法参数
               }
             }
-            this.handleFormSubmit(formData.field, data);
+            this.handleEdit(formData.field, data);
             return false;
           });
         }
       });
     });
   }
-
-  // 提交:添加/编辑
-  handleFormSubmit(formData, data) {
-    // 验证数据
+  handleAdd(formData, data, streamInfo) {
     if (!this.validateData(formData)) {
       return;
     }
     let params = {
+      id: streamInfo.stream,
       type: 'stream', // 仅以视频流为例
       desc: formData.desc,
-      stream: formData.stream,
+      stream: streamInfo,
       alg: data.alg,
-      draw_size: data.draw_size,
-      encoding: data.encoding,
       video_record: 0,
-      ipv4: '',
-      name: '',
-      info: { rtsp_transport: "tcp", username: "", password: "" }
+      detail: {
+        username: '',
+        password: '',
+        stream_url: streamInfo.origin_url
+      }
     }
-
-    if (!data.id) {
-      sourceApis.addSource(params).then(res => {
-        this.getTableData();
-        this.showNotification('数据添加成功！');
-        // 关闭模态框
-        layui.use('layer', () => {
-          layui.layer.closeAll();
-        });
-      })
-    } else {
-      params.id = data.id;
-      sourceApis.editSource(params).then(res => {
-        this.getTableData();
-        this.showNotification('数据更新成功！');
-        // 关闭模态框
-        layui.use('layer', () => {
-          layui.layer.closeAll();
-        });
-      })
+    sourceApis.addSource(params).then(res => {
+      this.getTableData();
+      this.showNotification('数据添加成功！');
+      // 关闭模态框
+      // layui.use('layer', () => {
+      //   layui.layer.closeAll();
+      // });
+    })
+  }
+  handleEdit(formData, data) {
+    let params = {
+      id: data.id,
+      alg: data.alg,
     }
-
+    sourceApis.editSource(params).then(res => {
+      this.getTableData();
+      this.showNotification('数据更新成功！');
+      // 关闭模态框
+      layui.use('layer', () => {
+        layui.layer.closeAll();
+      });
+    })
   }
 
   // 验证数据
@@ -336,8 +347,14 @@ class LayuiTableManager {
 
 // 等待Layui加载完成后初始化
 layui.use(['table', 'layer', 'form'], () => {
+  sourceApis.getToken().then(res => {
+    if (res.error_code == 0) {
+      ZQLGLOBAL.token = res.data;
+      window.tableManager = new LayuiTableManager();
+    }
+  })
   // 初始化表格管理器
-  window.tableManager = new LayuiTableManager();
+
 });
 
 const sourceApis = {
@@ -347,6 +364,9 @@ const sourceApis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.source}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -362,6 +382,9 @@ const sourceApis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.alg}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -376,7 +399,7 @@ const sourceApis = {
       $.ajax({
         type: "GET",
         dataType: "json",
-        url: `http://${ZQLGLOBAL.serverIp}/algsjson/${alg_name}.json`,
+        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.algsjson}/zh/${alg_name}.json`,
         success: function (res) {
           resolve(res)
         },
@@ -392,6 +415,9 @@ const sourceApis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.attr}?stream=${stream}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -408,6 +434,9 @@ const sourceApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.source}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -424,6 +453,9 @@ const sourceApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.source}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -440,6 +472,9 @@ const sourceApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.source}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -456,6 +491,9 @@ const sourceApis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.group}?alg=${type}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -464,5 +502,58 @@ const sourceApis = {
         }
       });
     })
+  },
+
+  getToken: async () => {
+    var ak = ZQLGLOBAL.accessKey;
+    var sk = ZQLGLOBAL.accessSecret;
+    var timestampRes = await sourceApis.getTimestamp();
+    let timestamp = timestampRes.data;
+    var nonce = sourceApis.generateRandomString(10);
+    let signature = sourceApis.generateSignature(ak, sk, timestamp, nonce)
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getToken}?signature=${signature}&ak=${ak}&timestamp=${timestamp}&nonce=${nonce}`,
+        success: function (res) {
+          resolve(res)
+        },
+        error: function (err) {
+          reject(err)
+        }
+      });
+    })
+  },
+  getTimestamp: () => {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getTime}`,
+        success: function (res) {
+          resolve(res)
+        },
+        error: function (err) {
+          reject(err)
+        }
+      });
+    })
+  },
+  generateSignature: (ak, sk, timestamp, nonce) => {
+    var message = `${ak}:${timestamp}:${nonce}`;
+    var hash = CryptoJS.HmacSHA256(message, sk);
+    var signature = CryptoJS.enc.Hex.stringify(hash);
+    return signature
+  },
+  generateRandomString(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+
+    return result;
   }
 }

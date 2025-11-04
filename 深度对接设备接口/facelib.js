@@ -65,8 +65,8 @@ class FaceLibManager {
     return new Promise((resolve, reject) => {
       faceLibApis.getGrpup().then(res => {
         this.groupData = res.data.map(item => {
-          item.ext = JSON.parse(item.ext);
           item.quality = item.ext.quality;
+          item.confidence = item.ext.confidence;
           return item
         });
         if (this.groupData.length > 0) {
@@ -185,7 +185,14 @@ class FaceLibManager {
                         <div class="layui-form-item">
                             <label class="layui-form-label">人脸质量</label>
                             <div class="layui-input-block">
-                                <input type="text" name="quality" value="${data.quality}" required lay-verify="required" placeholder="请输入描述" autocomplete="off" class="layui-input">
+                                <input type="text" name="quality" value="${data.quality}" required lay-verify="required" placeholder="请输入人脸质量" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">人脸检测置信度</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="confidence" value="${data.confidence}" required lay-verify="required" placeholder="请输入人脸检测置信度" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         
@@ -203,7 +210,7 @@ class FaceLibManager {
             if (type == 'add') {
               faceLibApis.addGroup({
                 alg: 'face',
-                ext: { quality: formData.field.quality },
+                ext: { quality: formData.field.quality, confidence: formData.field.confidence },
                 name: formData.field.name
               }).then(res => {
                 this.getGroupData();
@@ -218,7 +225,7 @@ class FaceLibManager {
               faceLibApis.editGroup({
                 id: data.id,
                 alg: 'face',
-                ext: { quality: formData.field.quality },
+                ext: { quality: formData.field.quality, confidence: formData.field.confidence },
                 name: formData.field.name
               }).then(res => {
                 this.getGroupData();
@@ -366,7 +373,7 @@ class FaceLibManager {
     this.showNotification(type == 'add' ? '数据添加成功！' : '数据更新成功！');
     setTimeout(() => {
       this.getTableData();
-    }, 1500)    
+    }, 1500)
   }
 
   // 验证数据
@@ -384,11 +391,11 @@ class FaceLibManager {
       layui.layer.confirm('确定要删除这条数据吗？', {
         icon: 3,
         title: '提示'
-      }, (index) => {
-        faceLibApis.delSource({ id: id }).then(res => {
+      }, () => {
+        faceLibApis.delFace({ ids: [id] }).then(res => {
           this.getTableData();
           this.showNotification('数据删除成功！');
-          layui.layer.close(index);
+          layui.layer.close();
         })
       });
     });
@@ -407,8 +414,14 @@ class FaceLibManager {
 
 // 等待Layui加载完成后初始化
 layui.use(['table', 'layer', 'form'], () => {
-  // 初始化人脸列表
-  window.faceLibManager = new FaceLibManager();
+  faceLibApis.getToken().then(res => {
+    if (res.error_code == 0) {
+      ZQLGLOBAL.token = res.data;
+      // 初始化人脸列表
+      window.faceLibManager = new FaceLibManager();
+    }
+  })
+
 });
 
 const faceLibApis = {
@@ -418,6 +431,9 @@ const faceLibApis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.face}?page=${params.page}&size=${params.size}&group_id=${params.group_id}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -434,6 +450,9 @@ const faceLibApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.face}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -450,6 +469,9 @@ const faceLibApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.face}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -466,6 +488,9 @@ const faceLibApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.face}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -480,6 +505,9 @@ const faceLibApis = {
       $.ajax({
         type: "PUT",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.image}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         data: formdata, // 使用FormData对象
         processData: false,  // 告诉jQuery不要处理发送的数据
         contentType: false,
@@ -500,6 +528,9 @@ const faceLibApis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.group}?alg=${type}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -516,6 +547,9 @@ const faceLibApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.group}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -532,6 +566,9 @@ const faceLibApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.group}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -548,6 +585,9 @@ const faceLibApis = {
         contentType: "application/json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.group}`,
         data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -557,4 +597,57 @@ const faceLibApis = {
       });
     })
   },
+
+  getToken: async () => {
+    var ak = ZQLGLOBAL.accessKey;
+    var sk = ZQLGLOBAL.accessSecret;
+    var timestampRes = await faceLibApis.getTimestamp();
+    let timestamp = timestampRes.data;
+    var nonce = faceLibApis.generateRandomString(10);
+    let signature = faceLibApis.generateSignature(ak, sk, timestamp, nonce)
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getToken}?signature=${signature}&ak=${ak}&timestamp=${timestamp}&nonce=${nonce}`,
+        success: function (res) {
+          resolve(res)
+        },
+        error: function (err) {
+          reject(err)
+        }
+      });
+    })
+  },
+  getTimestamp: () => {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getTime}`,
+        success: function (res) {
+          resolve(res)
+        },
+        error: function (err) {
+          reject(err)
+        }
+      });
+    })
+  },
+  generateSignature: (ak, sk, timestamp, nonce) => {
+    var message = `${ak}:${timestamp}:${nonce}`;
+    var hash = CryptoJS.HmacSHA256(message, sk);
+    var signature = CryptoJS.enc.Hex.stringify(hash);
+    return signature
+  },
+  generateRandomString(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+
+    return result;
+  }
 }

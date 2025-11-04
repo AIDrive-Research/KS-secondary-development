@@ -80,14 +80,14 @@ const ZQL_multivideo = {
     let algList = ZQL_sources[ZQL_playingSource[index]].alg;
     let algEl = '<ul>';
     for (let alg in algList) {
-      let name = algList[alg].reserved_args.ch_name;
+      let name = algList[alg].reserved_args.display_name;
       algEl = algEl + `<li alg="${alg}" index="${index}">${name}</li>`
     }
     algEl = algEl + '</ul>'
     el.innerHTML = `
       <div class="camera">${ZQL_sources[ZQL_playingSource[index]].desc}</div>
       <div class="alg">      
-        <div class="algname">算法: ${ZQL_playingSource[index].alg ? ZQL_sources[ZQL_playingSource[index]].alg[alg].reserved_args.ch_name : ''}</div>
+        <div class="algname">算法: ${ZQL_playingSource[index].alg ? ZQL_sources[ZQL_playingSource[index]].alg[alg].reserved_args.display_name : ''}</div>
         ${algEl}
       </div>
       <div id="close${index}">关闭</div>
@@ -98,13 +98,13 @@ const ZQL_multivideo = {
         let alg = e.currentTarget.getAttribute("alg")
         ZQL_videosInfos[index].alg = alg;
         let videlel = document.querySelector(`#video-title${index}`);
-        videlel.querySelector(".algname").innerHTML = '算法：' + ZQL_sources[ZQL_playingSource[index]].alg[alg].reserved_args.ch_name
+        videlel.querySelector(".algname").innerHTML = '算法：' + ZQL_sources[ZQL_playingSource[index]].alg[alg].reserved_args.display_name
       })
     })
     document.querySelector(`#close${index}`).addEventListener('click', () => {
       ZQL_multivideo.clearAlgList(index);
       ZQL_multivideo.liveStopLoading(index);
-      ZQL_multivideo.destoryVideoByIndex(index);
+      ZQL_multivideo.destroyVideoByIndex(index);
       ZQL_playingSource[index] = null;
       ZQL_videosInfos[index] = null;
     })
@@ -121,7 +121,7 @@ const ZQL_multivideo = {
       return;
     }
     if (ZQL_videosInfos[index].status == "离线") {
-      ZQL_multivideo.destoryVideoByIndex(index);
+      ZQL_multivideo.destroyVideoByIndex(index);
       ZQL_multivideo.subscribeLive(ZQL_playingSource[index], index);
     } else {
       if (!ZQL_videosInfos[index].stream) {
@@ -135,7 +135,7 @@ const ZQL_multivideo = {
       }
       ZQL_videosInfos[index] &&
         ZQL_videosInfos[index].srsrtc &&
-        ZQL_videosInfos[index].srsrtc.destroy();
+        ZQL_videosInfos[index].srsrtc.close();
       ZQL_videosInfos[index].srsrtc = null;
       ZQL_videosInfos[index].status = "";
       ZQL_multivideo.playVideo(ZQL_playingSource[index], index);
@@ -183,96 +183,93 @@ const ZQL_multivideo = {
     ZQL_videosInfos[index].loading = true;
 
     let video = document.getElementById("video" + index);
-    let stream = ZQL_videosInfos[index].stream;
-    var srsrtc;
-    if (stream.indexOf("webrtc") >= 0) {
-      let src =
-        "webrtc://" + ZQLGLOBAL.serverIp + "/live" + stream.split("/live")[1];
-      srsrtc = new JSWebrtc.Player(src, {
-        video: video,
-        autoplay: true,
-        onPlay: (obj) => {
-          ZQL_multivideo.liveStopLoading(index);
-          ZQL_videosInfos[index].loading = false;
-          ZQL_videosInfos[index].playerState = "success";
-        },
-      });
-    } else if (stream.indexOf(".flv") >= 0) {
-      let src = `http://${ZQLGLOBAL.serverIp}:${ZQLGLOBAL.srs_http_server}/live${stream.split("/live")[1]
-        }`;
-      srsrtc = mpegts.createPlayer(
-        {
-          type: "flv",
-          url: src,
-          isLive: true,
-        },
-        { enableWorker: true }
-      );
-      srsrtc.attachMediaElement(video);
-      srsrtc.load();
-      ZQL_videosInfos[index].playerState = "";
-      srsrtc
-        .play()
-        .then((res) => {
-          ZQL_multivideo.liveStopLoading(index);
-          ZQL_videosInfos[index].playerState = "success";
-          ZQL_videosInfos[index].loading = false;
+    let data_stream = ZQL_videosInfos[index].stream.replace('127.0.0.1', ZQLGLOBAL.serverIp);
 
-          if (ZQL_videosInfos[index].refreshTimeInterval) {
-            clearInterval(ZQL_videosInfos[index].refreshTimeInterval);
+    var srsrtc = new ZLMRTCClient.Endpoint({
+        element: video, // video 标签
+        debug: false, // 是否打印日志
+        zlmsdpUrl: data_stream, //流地址
+        simulcast: false,
+        useCamera: true,
+        audioEnable: true,
+        videoEnable: true,
+        recvOnly: true,
+        resolution: { w: 1280, h: 720 },
+        usedatachannel: false,
+        videoId: "", // 不填选择默认的:空字符串
+        audioId: "", // 不填选择默认的：空字符串
+      });
+      srsrtc.on(
+        ZLMRTCClient.Events.WEBRTC_OFFER_ANWSER_EXCHANGE_FAILED,
+        (e) => {
+          // offer anwser 交换失败
+          console.log("offer anwser 交换失败: index=", index, e);
+          if (e.code == -400 && e.msg == "stream not found") {
+            console.log(
+              `---------------- 重新订阅${index} -------------------------`
+            );
+            if (ZQL_sources[cameraId].type == "video") {
+              ZQL_multivideo.handleReplayVideo(index);
+            } else {
+              ZQL_multivideo.destroyVideoByIndex(index);
+              ZQL_multivideo.getCameraSize(ZQL_playingSource[index], index);
+              ZQL_multivideo.videoSubscribe(ZQL_playingSource[index], index);
+            }
           }
-          ZQL_videosInfos[index].refreshTime =
-            parseInt((Math.random() * 5 + 5) * 1000) * 60;
-          ZQL_videosInfos[index].refreshTimeInterval = setInterval(() => {
-            handleRefresh(index);
-          }, ZQL_videosInfos[index].refreshTime);
-        })
-        .catch((err) => { });
-      if (ZQL_videosInfos[index].replayTimer) {
-        clearTimeout(ZQL_videosInfos[index].replayTimer);
-      }
-      ZQL_videosInfos[index].replayTimer = setTimeout(() => {
-        ZQL_multivideo.replayflv(srsrtc, cameraId, index);
-      }, 3000);
-    }
+        }
+      );
+      srsrtc.on(ZLMRTCClient.Events.WEBRTC_ON_REMOTE_STREAMS, (e) => {
+        //获取到了远端流，可以播放
+        // console.log("播放成功", e.streams);
+        // console.log(`index=${index}`,player);
+        ZQL_multivideo.liveStopLoading(index);
+        ZQL_videosInfos[index].playerState = "success";
+        ZQL_videosInfos[index].loading = false;
+        ZQL_videosInfos[index].startTime = new Date().getTime();
+
+        if (ZQL_videosInfos[index].refreshTimeInterval) {
+          clearInterval(ZQL_videosInfos[index].refreshTimeInterval);
+        }
+        ZQL_videosInfos[index].refreshTime = parseInt(
+          (Math.random() * 5 + 5) * 1000 * 6
+        );
+
+        // this.videosInfos[index].refreshTimeInterval = setInterval(() => {
+        //   console.log(`index=${index}, player=`,this.videosInfos[index].srsrtc);
+        //   this.handleRefresh(index);
+        // }, this.videosInfos[index].refreshTime);
+      });
+      srsrtc.on(ZLMRTCClient.Events.WEBRTC_ON_CONNECTION_STATE_CHANGE, (e) => {
+        console.log("WEBRTC_ON_CONNECTION_STATE_CHANGE: index=", index, e);
+        if (e == "failed") {
+          console.log(
+            `${index}已运行${
+              (new Date().getTime() - ZQL_videosInfos[index].startTime) / 1000
+            }秒`
+          );
+
+          if (ZQL_sources[cameraId].type == "video") {
+            console.log(
+              `---------------- 重新推流${index} -------------------------`
+            );
+            ZQL_multivideo.handleReplayVideo(index);
+          } else {
+            console.log(
+              `---------------- 重新播放${index} -------------------------`
+            );
+            ZQL_multivideo.handleRefresh(index);
+          }
+        }
+        if (e == "disconnected") {
+          console.log(
+            `---------------- 重新播放${index} -------------------------`
+          );
+          ZQL_multivideo.handleRefresh(index);
+        }
+      });
     ZQL_videosInfos[index].srsrtc = srsrtc;
   },
-  replayflv(srsrtc, cameraId, index) {
-    if (!ZQL_videosInfos[index]) {
-      return;
-    }
-    if (ZQL_videosInfos[index].playerState == "success") {
-      return;
-    } else {
-      srsrtc.unload();
-      srsrtc.load();
-      srsrtc
-        .play()
-        .then((res) => {
-          ZQL_multivideo.liveStopLoading(index);
-          ZQL_videosInfos[index].playerState = "success";
-          ZQL_videosInfos[index].loading = false;
-          if (ZQL_videosInfos[index].refreshTimeInterval) {
-            clearInterval(ZQL_videosInfos[index].refreshTimeInterval);
-          }
-          ZQL_videosInfos[index].refreshTime =
-            parseInt((Math.random() * 5 + 5) * 1000) * 60;
-          ZQL_videosInfos[index].refreshTimeInterval = setInterval(() => {
-            ZQL_multivideo.handleRefresh(index);
-          }, ZQL_videosInfos[index].refreshTime);
-        })
-        .catch((err) => {
-          // this.destoryVideoByIndex(index);
-          // this.subscribeLive(cameraId, index);
-        });
-      if (ZQL_videosInfos[index].replayTimer) {
-        clearTimeout(ZQL_videosInfos[index].replayTimer);
-      }
-      ZQL_videosInfos[index].replayTimer = setTimeout(() => {
-        ZQL_multivideo.replayflv(srsrtc, cameraId, index);
-      }, 3000);
-    }
-  },
+
   reSubcribe(cameraId, index) {
     if (ZQL_videosInfos[index].subscribeTimeout) {
       clearTimeout(ZQL_videosInfos[index].subscribeTimeout);
@@ -284,8 +281,8 @@ const ZQL_multivideo = {
   },
   getCameraSize(id, index) {
     ZQL_multivideo.setOrisize(
-      ZQL_sources[id].draw_size[0],
-      ZQL_sources[id].draw_size[1],
+      ZQL_sources[id].stream.image_size.draw[0],
+      ZQL_sources[id].stream.image_size.draw[1],
       index, id
     );
   },
@@ -587,10 +584,10 @@ const ZQL_multivideo = {
   },
   destroyVideo(videonum) {
     for (let i = 0; i < videonum; i++) {
-      ZQL_multivideo.destoryVideoByIndex(i);
+      ZQL_multivideo.destroyVideoByIndex(i);
     }
   },
-  destoryVideoByIndex(index) {
+  destroyVideoByIndex(index) {
     ZQL_multivideo.clearCanvas(index);
     if (ZQL_videosInfos[index]) {
       if (
@@ -611,7 +608,7 @@ const ZQL_multivideo = {
       let video = document.getElementById("video" + index);
       video && (video.srcObject = null);
       ZQL_videosInfos[index].srsrtc &&
-        ZQL_videosInfos[index].srsrtc.destroy();
+        ZQL_videosInfos[index].srsrtc.close();
       ZQL_multivideo.clearCanvas(index);
       ZQL_videosInfos[index] = null;
     }
@@ -625,7 +622,10 @@ const ZQL_multivideo = {
     }
   },
   connectMqtt() {
-    let mqttclient = mqtt.connect(`ws://${ZQLGLOBAL.serverIp}:${ZQLGLOBAL.websocket}/mqtt`);
+    let mqttclient = mqtt.connect(`ws://${ZQLGLOBAL.serverIp}:${ZQLGLOBAL.websocket}/mqtt`, {
+      username: ZQLGLOBAL.mqttAuth[0],
+      password: ZQLGLOBAL.mqttAuth[1],
+    });
     mqttclient.subscribe(
       ZQLGLOBAL.resultTopic,
       { qos: 0 },
@@ -637,7 +637,7 @@ const ZQL_multivideo = {
       }
     );
     mqttclient.subscribe(
-      ZQLGLOBAL.streamCodeTopic,
+      ZQLGLOBAL.streamInfoTopic,
       { qos: 0 },
       (error) => {
         if (error) {
@@ -648,13 +648,10 @@ const ZQL_multivideo = {
     );
     mqttclient.on("message", (topic, payload) => {
       let msg = JSON.parse(payload.toString());
-      if (msg.msg_type == "result") {
+      if (msg.msg_type == "video_detection") {
         let id = msg.data.source.id;
         for (let i = 0; i < 4; i++) {
           if (ZQL_videosInfos[i]) {
-            let alg =
-              ZQL_videosInfos[i].alg && ZQL_videosInfos[i].alg.algname;
-
             if (
               id == ZQL_playingSource[i] &&
               msg.data.alg.name == ZQL_videosInfos[i].alg
@@ -674,23 +671,8 @@ const ZQL_multivideo = {
           }
         }
       }
-      if (msg.msg_type == "stream_code") {
-        let cameraId = msg.data.source_id;
-        for (let i = 0; i < ZQL_playingSource.videoNum; i++) {
-          if (cameraId == ZQL_playingSource[i] && ZQL_videosInfos[i]) {
-            if (!ZQL_videosInfos[i].stream_code) {
-              ZQL_videosInfos[i].stream_code = msg.data.stream_code;
-            } else if (
-              msg.data.stream_code != ZQL_videosInfos[i].stream_code
-            ) {
-              ZQL_videosInfos[i].stream_code = msg.data.stream_code;
-              ZQL_multivideo.handleRefresh(i);
-            }
-            break;
-          }
-        }
-      }
-
+      if(topic == "ks/stream_local")
+        console.log(msg.data.stream)
     });
   }
 }
@@ -702,6 +684,9 @@ const ZQL_apis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getSources}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -717,6 +702,9 @@ const ZQL_apis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.subscribe}?source_id=${source_id}`,
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("Authorization", `Bearer ${ZQLGLOBAL.token}`);
+        },
         success: function (res) {
           resolve(res)
         },
@@ -726,80 +714,11 @@ const ZQL_apis = {
       });
     })
   },
-  sysArgs: () => {
-    return new Promise((resolve, reject) => {
-      $.ajax({
-        type: "GET",
-        dataType: "json",
-        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.tunnel}`,
-        success: function (tunnel) {
-          if (tunnel.data.enable == false) {
-            $.ajax({
-              type: "GET",
-              dataType: "json",
-              url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.sysArgs}`,
-              success: function (res) {
-                resolve(res.data.map.local)
-              },
-              error: function (err) {
-                reject(err)
-              }
-            });
-          } else {
-            resolve({
-              "srs_server": tunnel.data.srs_server,
-              "srs_http_api": tunnel.data.srs_http_api,
-              "srs_http_server": tunnel.data.srs_http_server,
-              "websocket": tunnel.data.websocket
-            })
-          }
-
-        },
-        error: function (err) {
-          reject(err)
-        }
-      });
-
-    })
-  },
-  detectStream: () => {
-    return new Promise((resolve, reject) => {
-      $.ajax({
-        type: "GET",
-        dataType: "json",
-        url: `http://${ZQLGLOBAL.serverIp}:${ZQLGLOBAL.srs_http_api}/api/v1/streams?start=0&count=10000`,
-        success: function (res) {
-          resolve(res)
-        },
-        error: function (err) {
-          reject(err)
-        }
-      });
-    })
-  },
-  detectVideo: (device_id, stream) => {
-    return new Promise((resolve, reject) => {
-      $.ajax({
-        type: "GET",
-        dataType: "json",
-        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.detect}?device_id=${device_id}&stream=${stream}&draw_size=1280`,
-        success: function (res) {
-          if (res.error == 0) {
-            resolve({ status: 1 })
-          } else {
-            resolve({ status: 0 })
-          }
-        },
-        error: function (err) {
-          reject(err)
-        }
-      });
-    })
-  },
-  gettoken: () => {
+  getToken: async () => {
     var ak = ZQLGLOBAL.accessKey;
     var sk = ZQLGLOBAL.accessSecret;
-    var timestamp = parseInt(new Date().getTime() / 1000);
+    var timestampRes = await ZQL_apis.getTimestamp();
+    let timestamp = timestampRes.data;
     var nonce = ZQL_apis.generateRandomString(10);
     let signature = ZQL_apis.generateSignature(ak, sk, timestamp, nonce)
     return new Promise((resolve, reject) => {
@@ -807,6 +726,21 @@ const ZQL_apis = {
         type: "GET",
         dataType: "json",
         url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getToken}?signature=${signature}&ak=${ak}&timestamp=${timestamp}&nonce=${nonce}`,
+        success: function (res) {
+          resolve(res)
+        },
+        error: function (err) {
+          reject(err)
+        }
+      });
+    })
+  },
+  getTimestamp: () => {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: `http://${ZQLGLOBAL.serverIp}${ZQLGLOBAL.getTime}`,
         success: function (res) {
           resolve(res)
         },
@@ -891,14 +825,14 @@ function init() {
               ZQL_sources[key].checked = false
               if (ZQL_playingSource.videoNum == 1) {
                 ZQL_playingSource[0] = null;
-                ZQL_multivideo.destoryVideoByIndex(0);
+                ZQL_multivideo.destroyVideoByIndex(0);
                 ZQL_multivideo.clearAlgList(0);
                 ZQL_multivideo.liveStopLoading(0);
               } else {
                 for (let i = 0; i < 4; i++) {
                   if (ZQL_playingSource[i] == key) {
                     ZQL_playingSource[i] = null;
-                    ZQL_multivideo.destoryVideoByIndex(i);
+                    ZQL_multivideo.destroyVideoByIndex(i);
                     ZQL_multivideo.clearAlgList(i)
                     ZQL_multivideo.liveStopLoading(i);
                   }
@@ -912,9 +846,7 @@ function init() {
   }).catch(err => {
     console.log(err)
   })
-  // 获取系统参数，连接mqtt,通过mqtt获取实时检测结果和视频流状态码
-  ZQL_apis.sysArgs().then(res => {
-    ZQLGLOBAL = Object.assign(ZQLGLOBAL, res)
-    ZQL_multivideo.connectMqtt()
-  }).catch(err => { })
+  // 通过mqtt获取实时检测结果和视频流状态信息
+  ZQL_multivideo.connectMqtt()
+  
 }
