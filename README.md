@@ -13,18 +13,18 @@
 ## 深度对接设备接口
 可将代码下载到Windows环境，用谷歌浏览器直接打开.html文件运行，内含相关功能的源代码，用户可根据我司提供的代码修改做二次开发。本工程的代码，可直接双击运行，除此之外，恕不提供其它的售后支持，见谅。
 ### 实时画面播放&实时检测框
-live.html是实时画面播放和实时检测结果可视化的demo，将文件中的IP地址替换成KS设备的IP地址即可：
+live.html是实时画面播放和实时检测结果可视化的demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
 ![](深度对接设备接口/assets/live.png)
 ### 摄像头配置&算法绑定
-source.html是视频流管理demo，将文件中的IP地址替换成KS设备的IP地址即可：
+source.html是视频流管理demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
 ![](深度对接设备接口/assets/source.png)
 
 ### 底库分组&人脸底库
-facelib.html是底库分组管理和人脸底库增删改查的demo，将文件中的IP地址替换成KS设备的IP地址即可：
+facelib.html是底库分组管理和人脸底库增删改查的demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
 ![](深度对接设备接口/assets/facelib.png)
 
 ### 查看设备信息
-device.html是设备信息demo，将文件中的IP地址替换成KS设备的IP地址即可：
+device.html是设备信息demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
 ![](深度对接设备接口/assets/device.png)
 
 ## 心跳保活
