@@ -13,6 +13,7 @@ public class AlertVideo {
     private Object device;
     private Object source;
     private Object alg;
+    private String video;
     @JsonProperty("hazard_leve")
     private String hazardLeve;
 }
