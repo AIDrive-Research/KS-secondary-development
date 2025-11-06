@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>webrtc</title>
+  <meta charset="utf-8">
+
+  <link href="js/layui/css/layui.css" rel="stylesheet">
+  <link href="index.css" rel="stylesheet">
+  <script>
+    let ZQLGLOBAL = {
+      token:'',
+      accessKey:'69043226c380620667107ecc', // 修改成你自己的
+      accessSecret:'90e4eba0-fba8-41fa-ab9b-1c8f4006dbd3',// 修改成你自己的
+      serverIp: '192.168.1.87' ,// 修改成你自己的
+      getDevices: `:9192/ks/proxy/device`,
+      getSources: `:9192/ks/proxy/source`,
+      subscribe: `:9192/ks/proxy/stream/live/subscribe`,
+
+      getToken:':9192/ks/proxy/user/token',
+      getTime:':9192/ks/proxy/system/time',
+      resultTopic: 'ks/video_detection', //连接盒子的mqtt,接收实时检测结果
+      streamInfoTopic: 'ks/stream_local',// 连接盒子的mqtt,接收视频流状态变更信息，可监测流状态、分辨率变化
+      mqttAuth:['work','Bjhmdys@202010'], // mqtt账号密码
+    }
+
+    let ZQL_videosInfos = { 0: null, 1: null, 2: null, 3: null };
+    let ZQL_playingSource = {
+      0: null, 1: null, 2: null, 3: null,
+      videoNum: 4,
+      curposition: -1
+    }
+    let ZQL_sources = {};
+  </script>
+  <script type="text/javascript" src="js/crypto-js.js"></script>
+  <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+  <script type="text/javascript" src="js/mqtt.min.js"></script>
+  <script type="text/javascript" src="js/layui/layui.js"></script>
+  <script type="text/javascript" src="js/ZLMRTCClient.js"></script>
+  <script type="text/javascript" src="ZQL_common.js"></script>
+</head>
+
+
+<body>
+  <div class="main-container">
+    <div id="video-container" class="one-video">
+      <div class="video-box">
+        <div class="title-container" id="video-title1"></div>
+        <video ref="video" muted id="video1" class="video-js" autoplay="autoplay" preload="auto"></video>
+        <canvas class="canvas-shuju" id="canvas1"></canvas>
+      </div>
+    </div>
+    <div class="right-container">
+      <!-- <div class="btn-container">
+        <i class="z-icon-onevideo" id="icon-oneviveo"></i>
+        <i class="z-icon-fourvideo" id="icon-fourviveo"></i>
+      </div> -->
+      <div id="ZQL_source_tree"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="index.js"></script>
+</body>
+
+</html>

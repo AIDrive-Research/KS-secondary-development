@@ -32,3 +32,12 @@ device.html是设备信息demo，将文件中的IP、accessKey和accessSecret替
 
 ## 接收大模型复审告警
 启动main文件，在接收端创建一个server，在设备端【大模型】-【复审任务】-【结果推送】处，填上http://IP:port/vlreview  ，即可接收设备的大模型的复审告警。
+
+
+## 上位机实时画面
+1. 示例代码下载到本地（windows即可）。
+2. 修改index.html中的serverIp、accessKey、accessSecret的三个字段。
+三个修改该项在下图位置处修改。
+![](上位机实时画面/assets/index.png)
+![](上位机实时画面/assets/accesskey.png)
+3. 双击index.html打开，即可使用示例代码。
