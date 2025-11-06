@@ -14,21 +14,31 @@
 可将代码下载到Windows环境，用谷歌浏览器直接打开.html文件运行，内含相关功能的源代码，用户可根据我司提供的代码修改做二次开发。本工程的代码，可直接双击运行，除此之外，恕不提供其它的售后支持，见谅。
 ### 实时画面播放&实时检测框
 live.html是实时画面播放和实时检测结果可视化的demo，将文件中的IP地址替换成KS设备的IP地址即可：
-![](./assets/live.png)
+![](深度对接设备接口/assets/live.png)
 ### 摄像头配置&算法绑定
 source.html是视频流管理demo，将文件中的IP地址替换成KS设备的IP地址即可：
-![](./assets/source.png)
+![](深度对接设备接口/assets/source.png)
 
 ### 底库分组&人脸底库
 facelib.html是底库分组管理和人脸底库增删改查的demo，将文件中的IP地址替换成KS设备的IP地址即可：
-![](./assets/facelib.png)
+![](深度对接设备接口/assets/facelib.png)
 
 ### 查看设备信息
 device.html是设备信息demo，将文件中的IP地址替换成KS设备的IP地址即可：
-![](./assets/device.png)
+![](深度对接设备接口/assets/device.png)
 
 ## 心跳保活
 分别提供了python和java两种语言的服务端对接KS设备心跳的demo代码。
 
 ## 接收大模型复审告警
 启动main文件，在接收端创建一个server，在设备端【大模型】-【复审任务】-【结果推送】处，填上http://IP:port/vlreview  ，即可接收设备的大模型的复审告警。
+
+
+## 上位机实时画面
+1. 示例代码下载到本地（windows即可）。
+2. 修改index.html中的serverIp、accessKey、accessSecret的三个字段。 三个修改该项在下图位置处修改。  
+
+![](上位机实时画面/assets/index.png)
+![](上位机实时画面/assets/accesskey.png)
+
+3. 双击index.html打开，即可使用示例代码。
