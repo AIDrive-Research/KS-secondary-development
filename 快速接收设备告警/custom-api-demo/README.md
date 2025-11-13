@@ -106,7 +106,7 @@
           "display_name": "算法名称中文",
           "type": "general"
       },
-      "hazard_level": "", //危险等级
+      "hazard_level": "", // 危险等级
       "video": "video_base64" //base64编码的视频数据
   }
   ```
