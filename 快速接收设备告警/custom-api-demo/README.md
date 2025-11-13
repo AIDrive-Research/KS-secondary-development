@@ -51,7 +51,7 @@
       },
       "alg": {
           "name": "算法名称英文",
-          "ch_name": "算法名称中文",
+          "display_name": "算法名称中文",
           "type": "general"
       },
       "hazard_level": "", //危险等级
@@ -103,7 +103,7 @@
       },
       "alg": {
           "name": "算法名称英文",
-          "ch_name": "算法名称中文",
+          "display_name": "算法名称中文",
           "type": "general"
       },
       "hazard_level": "", //危险等级
