@@ -24,7 +24,9 @@ For users who deeply use the device, this secondary development method allows yo
 - **Camera configuration & algorithm binding**  
 - **Database grouping & facial recognition library**
 - **Viewing device information**  
+
 ## Receiving Large-Model Review Alerts
 A few users require this interface. This method receives **review results from the device’s large AI model**.
+
 ## Heartbeat Monitoring
 A few users require this interface. The sample code helps check whether the device is **online**.
