@@ -1,43 +1,30 @@
-# 晓知精灵（KS）二次开发示例代码
-本工程是晓知精灵（KS）全系列产品的二次开发接口示例代码，目标是帮助二开人员更便捷的完成设备的二次开发，同样也为了降低我司的售后成本，所以将所有重要的**使用设备接口的可直接运行的**源代码开放出来。工程总共包含几个模块，快速接收设备告警、深度对接设备接口 和 心跳保活。
+# XiaoZhi AI Device Secondary Development Sample Code
+This project provides sample code for secondary development of the XiaoZhi AI all-in-one devices. You can use the official BBS API documentation along with these sample codes to quickly develop your own applications.
+The sample code we provide is ready-to-run and can interact with your device directly. You can follow the coding style in these examples to implement your own secondary development.
+For the most commonly used APIs, we provide sample code in **Python** and **Java**. For other APIs, we provide Python or other language examples only.
+We are only responsible for the provided sample code. For developers, we assume you have the necessary programming skills. We do not provide support for debugging your own code.
 
-**声明**：由于全部样例代码均已开源且可直接运行，可极大方便二次开发，用户可直接copy，稍加改动，即可完成二开。我司仅对提供出来的demo代码负责，默认情况下，售后不支持任何**帮看代码**。
+The repository mainly includes the following sample categories:
+- Receiving Device Real-Time Alerts(most common)
+- Full Integration with Device APIs(for advanced users)
+- Receiving large-model review alerts (for users with large-model devices)
+- Heartbeat monitoring (for advanced users)
 
-## 快速接收设备告警
-### http-server-demo 以HTTP协议接收设备告警（最常用）
-参考具体文件下的源代码demo即可。
-### tcp-server-demo 以TCP协议接收设备告警（常见PLC控制等）
-参考具体文件下的源代码demo即可。
-### custom-api-demo 自定义API（部分用户的平台接口规则限定了可用这个）
-参考具体文件下的源代码demo即可。
-## 深度对接设备接口
-可将代码下载到Windows环境，用谷歌浏览器直接打开.html文件运行，内含相关功能的源代码，用户可根据我司提供的代码修改做二次开发。本工程的代码，可直接双击运行，除此之外，恕不提供其它的售后支持，见谅。
-### 实时画面播放&实时检测框
-live.html是实时画面播放和实时检测结果可视化的demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
-![](深度对接设备接口/assets/live.png)
-### 摄像头配置&算法绑定
-source.html是视频流管理demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
-![](深度对接设备接口/assets/source.png)
+## Receiving Device Real-Time Alerts
+This is the most commonly used secondary development sample. Most users use it to display real-time alert information from the device on their business platform.
+We provide three ways of sample code:
 
-### 底库分组&人脸底库
-facelib.html是底库分组管理和人脸底库增删改查的demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
-![](深度对接设备接口/assets/facelib.png)
+- **HTTP protocol** (most common)  
+- **TCP protocol** (often used in PLC control)  
+- **Custom API** (useful if your platform requires a specific alert data format)
 
-### 查看设备信息
-device.html是设备信息demo，将文件中的IP、accessKey和accessSecret替换成KS设备的IP地址、accessKey和accessSecret，其中accessKey和accessSecret在【系统设置】-【用户管理】中获取：
-![](深度对接设备接口/assets/device.png)
-
-## 心跳保活
-分别提供了python和java两种语言的服务端对接KS设备心跳的demo代码。
-
-## 接收大模型复审告警
-启动main文件，在接收端创建一个server，在设备端【大模型】-【复审任务】-【结果推送】处，填上http://IP:port/vlreview  ，即可接收设备的大模型的复审告警。
-
-
-## 上位机实时画面
-1. 示例代码下载到本地（windows即可）。
-2. 修改index.html中的serverIp、accessKey、accessSecret的三个字段。
-三个修改该项在下图位置处修改。
-![](上位机实时画面/assets/index.png)
-![](上位机实时画面/assets/accesskey.png)
-3. 双击index.html打开，即可使用示例代码。
+## Full Integration with Device APIs
+For users who deeply use the device, this secondary development method allows you not only to receive alerts but also to **control the device**. Main features include:
+- Live video streaming & real-time detection boxes 
+- Camera configuration & algorithm binding  
+- Database grouping & facial recognition library
+- Viewing device information  
+## Receiving Large-Model Review Alerts
+A few users require this interface. This method receives review results from the device’s large AI model.
+## Heartbeat Monitoring
+A few users require this interface. The sample code helps check whether the device is online.
